@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 
 type Biller = {
     billerId: string;
@@ -55,16 +56,19 @@ async function fetchBillers(pageNumber: number, recordsPerPage: number): Promise
             filters: { categoryKey: "C11" },
         }),
     });
-    const data = await res.json();
-    const list = data?.data?.records || data?.records || data?.data || [];
-    const records = (list as any[]).map((b: any) => ({
-        billerId: b.billerId || b.id,
-        billerName: b.billerName || b.name,
-        isAvailable: typeof b.isAvailable === "boolean" ? b.isAvailable : (b.billerStatus === "ACTIVE"),
-        coverage: b.coverageCity && b.coverageCity !== "-" ? b.coverageCity : (b.coverageState && b.coverageState !== "-" ? b.coverageState : "PAN India"),
-        iconUrl: b.iconUrl,
-    }));
-    const metaRaw = data?.data?.meta || {};
+    const data: unknown = await res.json();
+    const list = (data as any)?.data?.records || (data as any)?.records || (data as any)?.data || [];
+    const records: Biller[] = (list as unknown[]).map((raw): Biller => {
+        const b = raw as { billerId?: string; id?: string; billerName?: string; name?: string; isAvailable?: boolean; billerStatus?: string; coverageCity?: string; coverageState?: string; iconUrl?: string };
+        return {
+            billerId: b.billerId || b.id || "",
+            billerName: b.billerName || b.name || "",
+            isAvailable: typeof b.isAvailable === "boolean" ? b.isAvailable : b.billerStatus === "ACTIVE",
+            coverage: b.coverageCity && b.coverageCity !== "-" ? b.coverageCity : b.coverageState && b.coverageState !== "-" ? b.coverageState : "PAN India",
+            iconUrl: b.iconUrl,
+        };
+    });
+    const metaRaw = (data as any)?.data?.meta || {};
     const meta: BillerMeta = {
         totalPages: Number(metaRaw.totalPages || 1),
         currentPage: Number(metaRaw.currentPage || pageNumber || 1),
@@ -82,26 +86,35 @@ async function fetchBillerDetailsApi(billerId: string): Promise<BillerDetails> {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ billerId }),
     });
-    const data = await res.json();
-    const details = data?.data || data;
-    const paramsSrc = details?.inputParameters || details?.parameters || [];
-    const inputParameters: InputParameter[] = (paramsSrc as any[]).map((p: any) => ({
-        name: p.desc || p.name,
-        paramName: p.name || p.paramName,
-        dataType: (p.inputType === "NUMERIC" ? "NUMERIC" : "ALPHANUMERIC") as "NUMERIC" | "ALPHANUMERIC",
-        minLength: Number(p.minLength || 0),
-        maxLength: Number(p.maxLength || 256),
-        regex: p.regex || "",
-        mandatory: !!p.mandatory,
-        desc: p.desc || "",
-    }));
-    const paymentModes: string[] = (details?.paymentModes || []).map((m: any) => m?.name || m).filter(Boolean);
+    const data: unknown = await res.json();
+    const details = (data as any)?.data || data;
+    const paramsSrc = (details as any)?.inputParameters || (details as any)?.parameters || [];
+    const inputParameters: InputParameter[] = (paramsSrc as unknown[]).map((raw): InputParameter => {
+        const p = raw as { name?: string; desc?: string; minLength?: number | string; maxLength?: number | string; inputType?: string; regex?: string; mandatory?: number | boolean; paramName?: string };
+        return {
+            name: p.desc || p.name || "",
+            paramName: p.name || p.paramName || "",
+            dataType: p.inputType === "NUMERIC" ? "NUMERIC" : "ALPHANUMERIC",
+            minLength: Number(p.minLength || 0),
+            maxLength: Number(p.maxLength || 256),
+            regex: p.regex || "",
+            mandatory: !!p.mandatory,
+            desc: p.desc || "",
+        };
+    });
+    const modes = (details as any)?.paymentModes || [];
+    const paymentModes: string[] = (modes as unknown[])
+        .map((raw) => {
+            const m = raw as { name?: string } | string;
+            return typeof m === "string" ? m : m?.name || "";
+        })
+        .filter((s) => !!s) as string[];
     return {
         inputParameters,
         paymentModes: paymentModes.length ? paymentModes : ["UPI", "Internet_Banking", "Debit_Card", "Credit_Card", "Account_Transfer", "NEFT", "Bharat_QR"],
-        fetchRequirement: details?.fetchRequirement || "SUPPORTED",
-        supportValidation: details?.supportValidation || "SUPPORTED",
-        paymentAmountExactness: details?.paymentAmountExactness || "EXACT",
+        fetchRequirement: (details as any)?.fetchRequirement || "SUPPORTED",
+        supportValidation: (details as any)?.supportValidation || "SUPPORTED",
+        paymentAmountExactness: (details as any)?.paymentAmountExactness || "EXACT",
     } as BillerDetails;
 }
 
@@ -112,14 +125,14 @@ async function preEnquiryApi(billerId: string, inputParameters: Record<string, s
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ billerId, inputParameters, externalRef }),
     });
-    const data = await res.json();
-    const e = data?.data || data;
+    const data: unknown = await res.json();
+    const e = (data as any)?.data || data;
     return {
-        enquiryReferenceId: e?.enquiryReferenceId || externalRef,
-        amount: e?.amount ?? 0,
-        customerName: e?.customerName,
-        policyStatus: e?.policyStatus,
-        dueDate: e?.dueDate,
+        enquiryReferenceId: (e as any)?.enquiryReferenceId || externalRef,
+        amount: (e as any)?.amount ?? 0,
+        customerName: (e as any)?.customerName,
+        policyStatus: (e as any)?.policyStatus,
+        dueDate: (e as any)?.dueDate,
     };
 }
 
@@ -223,7 +236,7 @@ export default function PayPremiumPage() {
         <div className="max-w-6xl mx-auto px-4 py-8 w-full">
             <div className="mb-6">
                 <nav className="text-sm text-gray-500 mb-2">
-                    <a href="/" className="hover:text-primary">Home</a>
+                    <Link href="/" className="hover:text-primary">Home</Link>
                     <span className="px-2">/</span>
                     <span className="text-gray-700">Pay Premium</span>
                 </nav>

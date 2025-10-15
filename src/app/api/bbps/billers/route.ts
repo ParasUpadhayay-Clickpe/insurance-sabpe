@@ -33,8 +33,7 @@ export async function POST(request: Request) {
                 pagination: { pageNumber, recordsPerPage },
                 filters: { categoryKey, updatedAfterDate: "" },
             }),
-            // @ts-ignore
-            cache: "no-store",
+            cache: "no-store" as RequestCache,
         });
 
         const data = await res.json();
@@ -42,8 +41,9 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: data }, { status: res.status });
         }
         return NextResponse.json(data);
-    } catch (e: any) {
-        return NextResponse.json({ error: e?.message || "Unknown error" }, { status: 500 });
+    } catch (e) {
+        const message = e instanceof Error ? e.message : "Unknown error";
+        return NextResponse.json({ error: message }, { status: 500 });
     }
 }
 

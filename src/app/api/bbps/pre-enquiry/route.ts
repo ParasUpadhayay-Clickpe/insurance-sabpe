@@ -34,6 +34,8 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: "billerId, inputParameters, externalRef are required" }, { status: 400 });
         }
 
+        const clientIp = extractClientIp(request);
+
         const res = await fetch(`${BASE_URL}/marketplace/utilityPayments/prePaymentEnquiry`, {
             method: "POST",
             headers: buildHeaders(),
@@ -42,19 +44,18 @@ export async function POST(request: Request) {
                 initChannel: "AGT",
                 externalRef,
                 inputParameters,
-                deviceInfo: { ip: "0.0.0.0", mac: "BC-BE-33-65-E6-AC" },
-                remarks: {
-                    param1: 9999999999
-                },
+                deviceInfo: { ip: clientIp, mac: "WEB-CLIENT" },
+                remarks: inputParameters,
                 transactionAmount: transactionAmount ?? 0,
             }),
-            cache: "no-store",
+            cache: "no-store" as RequestCache,
         });
         const data = await res.json();
         if (!res.ok) return NextResponse.json({ error: data }, { status: res.status });
         return NextResponse.json(data);
-    } catch (e: any) {
-        return NextResponse.json({ error: e?.message || "Unknown error" }, { status: 500 });
+    } catch (e) {
+        const message = e instanceof Error ? e.message : "Unknown error";
+        return NextResponse.json({ error: message }, { status: 500 });
     }
 }
 

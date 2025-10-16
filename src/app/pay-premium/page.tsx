@@ -68,8 +68,13 @@ function isErrPayload(data: any): boolean {
     return (statuscode && String(statuscode).toUpperCase() === "ERR") || (!!status && /invalid|error|failed/i.test(String(status)));
 }
 
+const LAMBDA_BASE = (
+    process.env.NEXT_PUBLIC_BBPS_PROXY_URL ||
+    "https://4vtfgim3z4.execute-api.ap-south-1.amazonaws.com/dev"
+).replace(/\/$/, "");
+
 async function fetchBillers(pageNumber: number, recordsPerPage: number): Promise<{ records: Biller[]; meta: BillerMeta }> {
-    const res = await fetch("/api/bbps/billers", {
+    const res = await fetch(`${LAMBDA_BASE}/bbps/billers`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -110,7 +115,7 @@ async function fetchBillers(pageNumber: number, recordsPerPage: number): Promise
 }
 
 async function fetchBillerDetailsApi(billerId: string): Promise<BillerDetails> {
-    const res = await fetch("/api/bbps/biller-details", {
+    const res = await fetch(`${LAMBDA_BASE}/bbps/biller-details`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ billerId }),
@@ -157,7 +162,7 @@ async function fetchBillerDetailsApi(billerId: string): Promise<BillerDetails> {
 
 async function preEnquiryApi(billerId: string, inputParameters: Record<string, string>): Promise<EnquiryResponse> {
     const externalRef = `SABPE_${Date.now()}`;
-    const res = await fetch("/api/bbps/pre-enquiry", {
+    const res = await fetch(`${LAMBDA_BASE}/bbps/pre-enquiry`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ billerId, inputParameters, externalRef }),

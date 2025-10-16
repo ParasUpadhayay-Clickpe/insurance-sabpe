@@ -1,8 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { Suspense, useMemo, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+
+export const dynamic = "force-dynamic";
 
 type CustomerParam = { Name?: string; Value?: string };
 type VerifyData = {
@@ -35,7 +37,7 @@ function formatAmount(a: string | number | undefined) {
     return new Intl.NumberFormat("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(num);
 }
 
-export default function VerifyPaymentPage() {
+function VerifyPaymentInner() {
     const sp = useSearchParams();
     const [manual, setManual] = useState("" as string);
 
@@ -169,4 +171,11 @@ export default function VerifyPaymentPage() {
     );
 }
 
+export default function VerifyPaymentPage() {
+    return (
+        <Suspense fallback={<div className="max-w-5xl mx-auto px-4 py-8 text-gray-600">Loading payment status...</div>}>
+            <VerifyPaymentInner />
+        </Suspense>
+    );
+}
 

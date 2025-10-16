@@ -36,7 +36,24 @@ type EnquiryResponse = {
     customerName?: string;
     policyStatus?: string;
     dueDate?: string;
-};
+    billNumber?: string;
+    billPeriod?: string;
+    billDate?: string;
+    billDueDate?: string;
+    customerParamsDetails?: { Name?: string; Value?: string }[];
+    billDetails?: any[];
+    additionalDetails?: any[];
+    statuscode?: string;
+    status?: string;
+    rawStatus?: string;
+    // Legacy optional fields kept for UI fallbacks
+    CustomerName?: string;
+    BillNumber?: string;
+    BillPeriod?: string;
+    BillDate?: string;
+    BillDueDate?: string;
+    BillAmount?: string;
+}
 
 type BillerMeta = {
     totalPages: number;
@@ -177,13 +194,23 @@ async function preEnquiryApi(billerId: string, inputParameters: Record<string, s
         throw new Error(msg);
     }
     const e = (data as any)?.data || data;
+    const billAmount = e?.BillAmount;
     return {
-        enquiryReferenceId: (e as any)?.enquiryReferenceId || externalRef,
-        amount: (e as any)?.amount ?? 0,
-        customerName: (e as any)?.customerName,
-        policyStatus: (e as any)?.policyStatus,
-        dueDate: (e as any)?.dueDate,
-    };
+        enquiryReferenceId: e?.enquiryReferenceId || externalRef,
+        amount: typeof billAmount === "string" ? Number(billAmount) : (e?.amount ?? 0),
+        customerName: e?.CustomerName || e?.customerName,
+        policyStatus: e?.policyStatus,
+        dueDate: e?.BillDueDate || e?.dueDate,
+        billNumber: e?.BillNumber,
+        billPeriod: e?.BillPeriod,
+        billDate: e?.BillDate,
+        billDueDate: e?.BillDueDate,
+        customerParamsDetails: Array.isArray(e?.CustomerParamsDetails) ? e.CustomerParamsDetails : [],
+        billDetails: Array.isArray(e?.BillDetails) ? e.BillDetails : [],
+        additionalDetails: Array.isArray(e?.AdditionalDetails) ? e.AdditionalDetails : [],
+        statuscode: (data as any)?.statuscode,
+        rawStatus: (data as any)?.status,
+    } as EnquiryResponse;
 }
 
 export default function PayPremiumPage() {
@@ -435,7 +462,9 @@ export default function PayPremiumPage() {
             {currentStep === 3 && (
                 <div className="bg-white/90 rounded-xl shadow-md p-8 border border-lightBg">
                     <div className="flex items-center mb-6">
-                        <button onClick={() => setCurrentStep(2)} className="text-secondary hover:text-primary mr-4"><i className="fas fa-arrow-left text-xl" /></button>
+                        <button onClick={() => setCurrentStep(2)} className="text-secondary hover:text-primary mr-4">
+                            <i className="fas fa-arrow-left text-xl" />
+                        </button>
                         <h2 className="text-2xl font-bold text-gray-900">Verify Premium Details</h2>
                     </div>
 
@@ -447,31 +476,113 @@ export default function PayPremiumPage() {
                     ) : enquiryData ? (
                         <div>
                             <div className="bg-gradient-to-r from-primary to-secondary text-white rounded-lg p-6 mb-6 shadow-md">
-                                <h3 className="text-xl font-bold mb-4">Policy Information</h3>
-                                <div className="space-y-2">
-                                    <div className="flex justify-between"><span>Customer Name:</span><span className="font-semibold">{enquiryData.customerName || "N/A"}</span></div>
-                                    <div className="flex justify-between"><span>Policy Status:</span><span className="font-semibold">{enquiryData.policyStatus || "N/A"}</span></div>
-                                    {enquiryData.dueDate && <div className="flex justify-between"><span>Due Date:</span><span className="font-semibold">{new Date(enquiryData.dueDate).toLocaleDateString("en-IN", { year: "numeric", month: "long", day: "numeric" })}</span></div>}
+                                <h3 className="text-xl font-bold mb-4">Premium Details</h3>
+                                <div className="space-y-4">
+                                    {/* Customer Name */}
+                                    <div className="flex justify-between">
+                                        <span>Customer Name:</span>
+                                        <span className="font-semibold">
+                                            {enquiryData.customerName ||
+                                                enquiryData.CustomerName ||
+                                                (Array.isArray(enquiryData.customerParamsDetails)
+                                                    ? (enquiryData.customerParamsDetails.find((item: any) =>
+                                                        item.Name?.toLowerCase().includes("customer"))?.Value)
+                                                    : "N/A"
+                                                ) || "N/A"}
+                                        </span>
+                                    </div>
+                                    {/* Bill Number */}
+                                    <div className="flex justify-between">
+                                        <span>Bill Number:</span>
+                                        <span className="font-semibold">
+                                            {enquiryData.billNumber || enquiryData.BillNumber || "N/A"}
+                                        </span>
+                                    </div>
+                                    {/* Bill Amount */}
+                                    <div className="flex justify-between">
+                                        <span>Bill Amount:</span>
+                                        <span className="font-semibold text-primary text-xl">
+                                            ₹
+                                            {enquiryData.amount !== undefined
+                                                ? new Intl.NumberFormat("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(enquiryData.amount)
+                                                : enquiryData.BillAmount
+                                                    ? new Intl.NumberFormat("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Number(enquiryData.BillAmount))
+                                                    : "N/A"
+                                            }
+                                        </span>
+                                    </div>
+                                    {/* Due Date */}
+                                    <div className="flex justify-between">
+                                        <span>Due Date:</span>
+                                        <span className="font-semibold">
+                                            {enquiryData.billDueDate || enquiryData.BillDueDate || "N/A"}
+                                        </span>
+                                    </div>
+                                    {/* Policy/Customer Name for display (in addition to Customer Name field) */}
+                                    <div className="flex justify-between">
+                                        <span>Name:</span>
+                                        <span className="font-semibold">
+                                            {enquiryData.customerName ||
+                                                enquiryData.CustomerName ||
+                                                (Array.isArray(enquiryData.customerParamsDetails)
+                                                    ? (enquiryData.customerParamsDetails.find((item: any) =>
+                                                        item.Name?.toLowerCase().includes("name"))?.Value)
+                                                    : "N/A"
+                                                ) || "N/A"}
+                                        </span>
+                                    </div>
                                 </div>
                             </div>
-                            <div className="bg-lightBg rounded-lg p-6 mb-6">
-                                <div className="flex justify-between items-center mb-4"><span className="text-gray-700 text-lg">Premium Amount</span><span className="text-3xl font-bold text-primary">₹{new Intl.NumberFormat("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(enquiryData.amount)}</span></div>
-                                <div className="space-y-2 text-sm text-gray-600" />
+
+                            <div className="bg-white rounded-lg p-4 border border-lightBg mb-6">
+                                <div className="flex flex-wrap gap-3 text-sm">
+                                    <span className={`px-3 py-1 rounded-full ${enquiryData.statuscode === 'TXN' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
+                                        {enquiryData.status || enquiryData.rawStatus || 'Verified'}
+                                    </span>
+                                    <span className="px-3 py-1 rounded-full bg-cardBg border border-lightBg">
+                                        Ref: {enquiryData.enquiryReferenceId}
+                                    </span>
+                                </div>
                             </div>
+
                             <div className="mb-6">
                                 <label className="block text-gray-700 font-semibold mb-3">Select Payment Mode</label>
                                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                                     {["Cash", "UPI", "Card", "Net Banking"].map((mode) => (
-                                        <button key={mode} type="button" onClick={() => setSelectedPaymentMode(mode)} className={`border-2 rounded-lg p-4 text-center transition duration-300 ${selectedPaymentMode === mode ? "border-accent bg-lightBg ring-2 ring-accent/40" : "border-gray-300 hover:border-secondary hover:shadow-sm"}`}>
-                                            <i className={`fas ${mode === "Cash" ? "fa-money-bill-wave" : mode === "UPI" ? "fa-mobile-alt" : mode === "Card" ? "fa-credit-card" : "fa-university"} text-2xl text-primary mb-2`} />
+                                        <button
+                                            key={mode}
+                                            type="button"
+                                            onClick={() => setSelectedPaymentMode(mode)}
+                                            className={`border-2 rounded-lg p-4 text-center transition duration-300 ${selectedPaymentMode === mode ? "border-accent bg-lightBg ring-2 ring-accent/40" : "border-gray-300 hover:border-secondary hover:shadow-sm"}`}
+                                        >
+                                            <i className={`fas ${mode === "Cash"
+                                                ? "fa-money-bill-wave"
+                                                : mode === "UPI"
+                                                    ? "fa-mobile-alt"
+                                                    : mode === "Card"
+                                                        ? "fa-credit-card"
+                                                        : "fa-university"
+                                                } text-2xl text-primary mb-2`} />
                                             <p className="text-sm font-medium">{mode}</p>
                                         </button>
                                     ))}
                                 </div>
                             </div>
                             <div className="flex gap-4 pt-4">
-                                <button type="button" onClick={() => setCurrentStep(2)} className="px-8 py-3 border border-gray-300 rounded-lg font-medium text-gray-700 hover:bg-gray-50 transition duration-300">Back</button>
-                                <button type="button" onClick={proceedToPayment} className="flex-1 bg-gradient-to-r from-accent to-secondary text-dark px-8 py-3 rounded-lg font-bold hover:text-white transition duration-300 shadow-md">Proceed to Payment</button>
+                                <button
+                                    type="button"
+                                    onClick={() => setCurrentStep(2)}
+                                    className="px-8 py-3 border border-gray-300 rounded-lg font-medium text-gray-700 hover:bg-gray-50 transition duration-300"
+                                >
+                                    Back
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={proceedToPayment}
+                                    className="flex-1 bg-gradient-to-r from-accent to-secondary text-dark px-8 py-3 rounded-lg font-bold hover:text-white transition duration-300 shadow-md"
+                                >
+                                    Proceed to Payment
+                                </button>
                             </div>
                         </div>
                     ) : (

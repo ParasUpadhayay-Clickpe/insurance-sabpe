@@ -29,6 +29,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        <meta httpEquiv="Content-Security-Policy" content="upgrade-insecure-requests" />
+      </head>
       <body className={`${geistSans.variable} ${geistMono.variable} ${inter.className} antialiased bg-lightBg text-gray-800 min-h-screen flex flex-col font-sans`}>
         <header className="bg-white shadow-lg sticky top-0 z-50 rounded-b-xl">
           <div className="container mx-auto flex justify-between items-center p-4">

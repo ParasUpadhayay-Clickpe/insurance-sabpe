@@ -47,6 +47,27 @@ type BillerMeta = {
     recordTo: number;
 };
 
+function extractErrorStatus(data: any): string {
+    try {
+        return (
+            data?.error?.status ||
+            data?.status ||
+            (typeof data?.error === "string" ? data.error : "") ||
+            data?.message ||
+            ""
+        );
+    } catch {
+        return "";
+    }
+}
+
+function isErrPayload(data: any): boolean {
+    if (!data) return false;
+    const statuscode = data?.statuscode || data?.error?.statuscode;
+    const status = data?.status || data?.error?.status;
+    return (statuscode && String(statuscode).toUpperCase() === "ERR") || (!!status && /invalid|error|failed/i.test(String(status)));
+}
+
 async function fetchBillers(pageNumber: number, recordsPerPage: number): Promise<{ records: Biller[]; meta: BillerMeta }> {
     const res = await fetch("/api/bbps/billers", {
         method: "POST",
@@ -56,7 +77,15 @@ async function fetchBillers(pageNumber: number, recordsPerPage: number): Promise
             filters: { categoryKey: "C11" },
         }),
     });
-    const data: unknown = await res.json();
+    const data: any = await res.json();
+    if (!res.ok) {
+        const msg = extractErrorStatus(data) || "Failed to load insurers";
+        throw new Error(msg);
+    }
+    if (isErrPayload(data)) {
+        const msg = extractErrorStatus(data) || "Failed to load insurers";
+        throw new Error(msg);
+    }
     const list = (data as any)?.data?.records || (data as any)?.records || (data as any)?.data || [];
     const records: Biller[] = (list as unknown[]).map((raw): Biller => {
         const b = raw as { billerId?: string; id?: string; billerName?: string; name?: string; isAvailable?: boolean; billerStatus?: string; coverageCity?: string; coverageState?: string; iconUrl?: string };
@@ -86,7 +115,15 @@ async function fetchBillerDetailsApi(billerId: string): Promise<BillerDetails> {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ billerId }),
     });
-    const data: unknown = await res.json();
+    const data: any = await res.json();
+    if (!res.ok) {
+        const msg = extractErrorStatus(data) || "Failed to load biller details";
+        throw new Error(msg);
+    }
+    if (isErrPayload(data)) {
+        const msg = extractErrorStatus(data) || "Failed to load biller details";
+        throw new Error(msg);
+    }
     const details = (data as any)?.data || data;
     const paramsSrc = (details as any)?.inputParameters || (details as any)?.parameters || [];
     const inputParameters: InputParameter[] = (paramsSrc as unknown[]).map((raw): InputParameter => {
@@ -125,7 +162,15 @@ async function preEnquiryApi(billerId: string, inputParameters: Record<string, s
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ billerId, inputParameters, externalRef }),
     });
-    const data: unknown = await res.json();
+    const data: any = await res.json();
+    if (!res.ok) {
+        const msg = extractErrorStatus(data) || "Failed to fetch premium details";
+        throw new Error(msg);
+    }
+    if (isErrPayload(data)) {
+        const msg = extractErrorStatus(data) || "Failed to fetch premium details";
+        throw new Error(msg);
+    }
     const e = (data as any)?.data || data;
     return {
         enquiryReferenceId: (e as any)?.enquiryReferenceId || externalRef,

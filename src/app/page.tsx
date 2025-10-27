@@ -81,7 +81,7 @@ export default function Home() {
             <div className="space-y-8">
               <div>
                 <h3 className="text-2xl font-semibold text-primary mb-3">📍 Our Location</h3>
-                <p className="text-gray-700 text-lg leading-relaxed">Surat, Gujarat</p>
+                <p className="text-gray-700 text-lg leading-relaxed">UG 150, Marvella Corridor, VIP Road, Vesu, Surat -  395007</p>
               </div>
               <div>
                 <h3 className="text-2xl font-semibold text-primary mb-3">📞 Call Us</h3>

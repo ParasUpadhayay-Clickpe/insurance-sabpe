@@ -39,9 +39,9 @@ export default function Home() {
 
       <section id="about-us" className="py-20 bg-white">
         <div className="container mx-auto px-6 text-center max-w-4xl">
-          <h2 className="text-4xl md:text-5xl font-bold text-dark mb-6">About SabPe</h2>
+          <h2 className="text-4xl md:text-5xl font-bold text-dark mb-6">About KB ToPay Finovative LLP</h2>
           <p className="text-gray-600 text-xl leading-relaxed mb-8">
-            At <b>SabPe</b>, we are dedicated to revolutionizing how you manage your insurance. Our platform offers a seamless, secure, and efficient way to handle all your insurance payments and policy needs. We are committed to providing transparent services, innovative solutions, and unwavering support to ensure your financial security.
+            At <b>KB ToPay Finovative LLP</b>, we are dedicated to revolutionizing how you manage your insurance. Our platform offers a seamless, secure, and efficient way to handle all your insurance payments and policy needs. We are committed to providing transparent services, innovative solutions, and unwavering support to ensure your financial security.
           </p>
           <p className="text-gray-600 text-xl leading-relaxed">
             Driven by a vision to simplify insurance for everyone, we leverage cutting-edge technology to offer a user-friendly experience. Trust us to be your reliable partner in protecting what matters most.
@@ -63,7 +63,7 @@ export default function Home() {
                 </div>
                 <h4 className="font-bold text-xl mb-3 text-dark">{title}</h4>
                 <p className="text-gray-600 leading-relaxed">
-                  {idx === 0 && "Create your secure account or seamlessly login to your existing SabPe profile."}
+                  {idx === 0 && "Create your secure account or seamlessly login to your existing profile."}
                   {idx === 1 && "Easily choose the specific insurance policy for which you wish to make a payment."}
                   {idx === 2 && "Select your preferred secure payment method and input the necessary details."}
                   {idx === 3 && "Receive instant payment confirmation and real-time updates to your policy status."}
@@ -87,11 +87,6 @@ export default function Home() {
                 <h3 className="text-2xl font-semibold text-primary mb-3">📞 Call Us</h3>
                 <p className="text-gray-700 text-lg">Ajay Bhutra</p>
                 <p className="text-secondary text-lg font-medium"><a href="tel:+919327282729" className="hover:underline">+91 93272 82729</a></p>
-              </div>
-              <div>
-                <h3 className="text-2xl font-semibold text-primary mb-3">📧 Email Us</h3>
-                <p className="text-secondary text-lg font-medium"><a href="mailto:support@sabpe.com" className="hover:underline">support@sabpe.com</a></p>
-                <p className="text-gray-700 text-lg mt-2">For general inquiries and support.</p>
               </div>
               <div>
                 <h3 className="text-2xl font-semibold text-primary mb-3">🕒 Working Hours</h3>
